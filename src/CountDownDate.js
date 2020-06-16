@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import './CountDownDate.css'
 
 function CountDownDate() {
 
@@ -9,22 +10,27 @@ function CountDownDate() {
     const [endDate, setEndDate] = useState(new Date(dateData))
     const [dateObj, setDateObj] = useState({})
 
+
     function storeEndDate(props) {
         setEndDate(props)
         localStorage.setItem("endDate", JSON.stringify(props))
     }
 
-
     useEffect(() => {
         const interval = setInterval(() => {
-            Timer()
+            Timer(interval)
         }, 1000);
-        return () => clearInterval(interval)
+        return () => clearInterval(interval);
     }, []);
 
+    function refresh() {
+        window.location.reload()
+    }
 
-    function Timer() {
 
+    function Timer(interval) {
+
+        let diff = endDate.getTime() - new Date().getTime()
         let yrs = endDate.getFullYear() - new Date().getFullYear()
         let mos = endDate.getMonth() - new Date().getMonth()
         let days = endDate.getDate() - new Date().getDate()
@@ -54,7 +60,13 @@ function CountDownDate() {
             mos = mos + 12;
         }
 
+        if (diff < 0) {
+            clearInterval(interval)
+            localStorage.clear()
+        }
+
         setDateObj({
+            diff: diff,
             yrs: yrs,
             mos: mos,
             days: days,
@@ -67,42 +79,51 @@ function CountDownDate() {
 
     let digits = [dateObj.yrs, dateObj.mos, dateObj.days, dateObj.hrs, dateObj.min, dateObj.sec]
     let showDigit = digits.map((item, index) => {
+        item = dateObj.diff < 0 ? <div className="text-danger">0</div> : item
+
+        let text = index === 0 ? "Years" :
+            index === 1 ? "Months" :
+                index === 2 ? "Days" :
+                    index === 3 ? "Hours" :
+                        index === 4 ? "Minutes" :
+                            index === 5 ? "Seconds" : null
+
         return (
-            <div key={index} className="col-2">
-                <h1 className="display-1">{item}:</h1>
+            <div id="card" key={index} className="card text-center mb-3">
+                <div className="card-header">
+                    <b>{text}</b>
+                </div>
+                <div className="card-body">
+                    <h1 className="display-1">{item}</h1>
+                </div>
             </div>
         )
     })
 
-    let text = ["years", "months", "days", "hours", "minutes", "seconds"]
-    let showText = text.map((item, index) => {
-        return (
-            <div key={index} className="col-2">
-                <h5>{item}</h5>
-            </div>
-        )
-    })
 
     return (
         <>
-            <div className="form-inline text-center">
-                <h3 className="mt-2 mr-3">Countdown until </h3>
+            <div id="num" className="container text-left">
+                <div className="row">
+                    {showDigit}
+                </div>
+            </div>
+            <h3 className="mt-2 mr-3">Countdown until: </h3>
+            <div>
                 <DatePicker
                     onChange={date => storeEndDate(date)}
                     placeholderText="Select an end date"
                     selected={endDate}
                     selectsEnd
                     endDate={endDate}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    timeCaption="time"
+                    dateFormat="MMMM d, yyyy h:mm aa"
                 />
             </div>
-            <div id="num" className="container text-left">
-                <div className="row">
-                    {showDigit}
-                </div>
-                <div className="row">
-                    {showText}
-                </div>
-            </div>
+            <button onClick={refresh} className="btn btn-success btn-sm mt-3">Start timer</button>
         </>
 
     )
